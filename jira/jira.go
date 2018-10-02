@@ -13,28 +13,31 @@ import (
 )
 
 const (
-	pattern            = ".*?([A-Z]+)-([0-9]+)\\b"
-	userEnv            = "JIRA_USER"
-	passEnv            = "JIRA_PASS"
-	baseURLEnv         = "JIRA_BASE_URL"
-	channelTemplateEnv = "JIRA_CHAN_TEMPL_"
-	defaultTemplate    = "{{.Key}} ({{.Fields.Assignee.Key}}, {{.Fields.Status.Name}}): " +
+	pattern             = ".*?([A-Z]+)-([0-9]+)\\b"
+	userEnv             = "JIRA_USER"
+	passEnv             = "JIRA_PASS"
+	baseURLEnv          = "JIRA_BASE_URL"
+	channelTemplateEnv  = "JIRA_CHAN_TEMPL_"
+	channelNotifyNewEnv = "JIRA_CHAN_NEW_"
+	defaultTemplate     = "{{.Key}} ({{.Fields.Assignee.Key}}, {{.Fields.Status.Name}}): " +
 		"{{.Fields.Summary}} - {{.Self}}"
 )
 
 var (
-	url            string
-	baseURL        string
-	jiraUser       string
-	jiraPass       string
-	projects       map[string]gojira.Project
-	channelConfigs map[string]channelConfig
-	client         *gojira.Client
-	re             = regexp.MustCompile(pattern)
+	url               string
+	baseURL           string
+	jiraUser          string
+	jiraPass          string
+	projects          map[string]gojira.Project
+	channelConfigs    map[string]channelConfig
+	notifyChannelsNew map[string][]string
+	client            *gojira.Client
+	re                = regexp.MustCompile(pattern)
 )
 
 type channelConfig struct {
 	issueTemplate string
+	notifyNew     []string
 }
 
 func getProjects() (map[string]gojira.Project, error) {
@@ -145,19 +148,41 @@ func initJIRAClient() error {
 	return nil
 }
 
+func getEnvWithPrefix(prefix string) (map[string]string) {
+	ret := make(map[string]string)
+	for _, value := range os.Environ() {
+		if strings.HasPrefix(value, prefix) {
+			split := strings.SplitN(value, "=", 2)
+			channel := strings.TrimPrefix(split[0], prefix)
+			if channel[0] != '#' {
+				channel = "#" + channel
+			}
+			ret[channel] = split[1]
+		}
+	}
+	return ret
+}
+
 func loadChannelConfigs() error {
 	channelConfigs = make(map[string]channelConfig)
-	for _, value := range os.Environ() {
-		if !strings.HasPrefix(value, channelTemplateEnv) {
-			continue
-		}
-		split := strings.SplitN(value, "=", 2)
-		channel := strings.TrimPrefix(split[0], channelTemplateEnv)
-		if channel[0] != '#' {
-			channel = "#" + channel
-		}
+	notifyChannelsNew = make(map[string][]string)
+	templates := getEnvWithPrefix(channelTemplateEnv)
+	notifyNew := getEnvWithPrefix(channelNotifyNewEnv)
+
+	for channel, templ := range templates {
 		channelConfigs[channel] = channelConfig{
-			issueTemplate: split[1],
+			issueTemplate: templ,
+		}
+	}
+	for channel, notify := range notifyNew {
+		projects := strings.Split(notify, ",")
+		for _, project := range projects {
+			_, found := notifyChannelsNew[project]
+			if !found {
+				notifyChannelsNew[project] = []string{}
+			}
+			notifyChannelsNew[project] =
+				append(notifyChannelsNew[project], channel)
 		}
 	}
 	return nil

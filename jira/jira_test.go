@@ -181,5 +181,22 @@ func TestChannelConfig(t *testing.T) {
 			So(ok, ShouldEqual, true)
 			So(conf.issueTemplate, ShouldEqual, "{{.Self}} - 2")
 		})
+
+		Convey("When there is notification configuration", func() {
+			os.Clearenv()
+			os.Setenv("JIRA_CHAN_NEW_#chan1", "JENKINS,MON")
+			loadChannelConfigs()
+
+			So(len(notifyChannelsNew), ShouldEqual, 2)
+
+			channels, ok := notifyChannelsNew["JENKINS"]
+			So(ok, ShouldEqual, true)
+			So(len(channels), ShouldEqual, 1)
+			So(channels[0], ShouldEqual, "#chan1")
+			channels, ok = notifyChannelsNew["MON"]
+			So(ok, ShouldEqual, true)
+			So(len(channels), ShouldEqual, 1)
+			So(channels[0], ShouldEqual, "#chan1")
+		})
 	})
 }
