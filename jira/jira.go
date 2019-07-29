@@ -328,7 +328,7 @@ func init() {
 		bot.RegisterPeriodicCommandV2(
 			"periodicJIRANotifyNew",
 			bot.PeriodicConfig{
-				CronSpec:  fmt.Sprintf("0 */%d * * * *", notifyInterval),
+				CronSpec:  fmt.Sprintf("@every %dm", notifyInterval),
 				CmdFuncV2: periodicJIRANotifyNew,
 			})
 	}
@@ -336,7 +336,7 @@ func init() {
 		bot.RegisterPeriodicCommandV2(
 			"periodicJIRANotifyResolved",
 			bot.PeriodicConfig{
-				CronSpec:  fmt.Sprintf("0 */%d * * * *", notifyInterval),
+				CronSpec:  fmt.Sprintf("@every %dm", notifyInterval),
 				CmdFuncV2: periodicJIRANotifyResolved,
 			})
 	}
