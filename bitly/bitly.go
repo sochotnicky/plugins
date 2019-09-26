@@ -15,7 +15,7 @@ const (
 
 var (
 	bitlyClient *bitly.Client
-	urlRegex    = xurls.Strict()
+	urlRegex    = xurls.Strict
 )
 
 func bitlyFilter(cmd *bot.FilterCmd) (string, error) {
