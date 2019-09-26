@@ -2,7 +2,7 @@ package bitly
 
 import (
 	"github.com/go-chat-bot/bot"
-	"github.com/mvdan/xurls"
+	"mvdan.cc/xurls/v2"
 	"github.com/zpnk/go-bitly"
 	"log"
 	"os"
